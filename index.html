@@ -3,32 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Régua de Avaliação</title>
-    <link rel="stylesheet" href="style.css">
+    <title>SigmaPass - Gerador de Senhas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        
+        :root {
+            --primary: 139 92 246;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        
+        .title-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .password-display {
+            font-family: 'Space Grotesk', monospace;
+            letter-spacing: 2px;
+        }
+
+        .strength-bar {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
 </head>
-<body>
+<body class="bg-zinc-950 text-white min-h-screen">
+    <div class="max-w-2xl mx-auto py-12 px-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-violet-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-violet-500/50">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="title-font text-4xl font-semibold tracking-tighter">SigmaPass</h1>
+                    <p class="text-zinc-400 text-sm">Senhas que ninguém quebra</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-zinc-400">
+                <div class="px-3 py-1 bg-zinc-900 rounded-full flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                    <span>Seguro</span>
+                </div>
+            </div>
+        </div>
 
-<div class="container">
-    <h1>🔥 Avaliação da Senha</h1>
+        <!-- Password Display -->
+        <div class="bg-zinc-900 rounded-3xl p-8 mb-8 border border-zinc-800 shadow-2xl">
+            <div id="password" 
+                 class="password-display bg-zinc-950 border border-zinc-700 rounded-2xl p-6 text-3xl font-medium text-center min-h-[80px] flex items-center justify-center break-all">
+                Clique em gerar
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button onclick="copyPassword()" 
+                        class="flex-1 bg-zinc-800 hover:bg-zinc-700 transition-colors py-4 rounded-2xl flex items-center justify-center gap-2 font-medium">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Copiar</span>
+                </button>
+                <button onclick="generatePassword()" 
+                        class="flex-1 bg-violet-600 hover:bg-violet-500 transition-all py-4 rounded-2xl flex items-center justify-center gap-2 font-semibold shadow-lg shadow-violet-500/30">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span>Gerar Nova</span>
+                </button>
+            </div>
+        </div>
 
-    <input type="text" id="senha" placeholder="Digite uma senha">
+        <!-- Strength Meter -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-3 px-1">
+                <span class="text-sm text-zinc-400">Força da senha</span>
+                <span id="strength-text" class="font-semibold text-emerald-400">MUITO BOM</span>
+            </div>
+            
+            <div class="h-3 bg-zinc-800 rounded-3xl overflow-hidden flex">
+                <div id="strength-bar" 
+                     class="strength-bar h-full w-0 bg-gradient-to-r from-red-500 via-yellow-400 via-emerald-400 to-violet-500 rounded-3xl">
+                </div>
+            </div>
+            
+            <div class="flex justify-between text-[10px] text-zinc-500 mt-2">
+                <span>Horrível</span>
+                <span>Ruim</span>
+                <span>Bom</span>
+                <span>Legal</span>
+                <span>Muito Bom</span>
+                <span class="text-violet-400">SIGMA</span>
+            </div>
+        </div>
 
-    <div class="meter">
-        <div id="fill"></div>
+        <!-- Options -->
+        <div class="bg-zinc-900 rounded-3xl p-8 border border-zinc-800">
+            <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i>
+                Personalizar Senha
+            </h2>
+
+            <!-- Length -->
+            <div class="mb-8">
+                <div class="flex justify-between mb-3">
+                    <span class="text-zinc-300">Comprimento</span>
+                    <span id="length-value" class="font-mono text-2xl font-semibold text-violet-400">16</span>
+                </div>
+                <input type="range" id="length" 
+                       min="8" max="64" value="16"
+                       oninput="updateLength(this.value)"
+                       class="w-full accent-violet-500">
+            </div>
+
+            <!-- Checkboxes -->
+            <div class="grid grid-cols-2 gap-4">
+                <label class="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl cursor-pointer transition-colors">
+                    <input type="checkbox" id="uppercase" checked class="w-5 h-5 accent-violet-500">
+                    <div>
+                        <span class="font-medium">Maiúsculas</span>
+                        <span class="text-xs text-zinc-500 block">A-Z</span>
+                    </div>
+                </label>
+                
+                <label class="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl cursor-pointer transition-colors">
+                    <input type="checkbox" id="lowercase" checked class="w-5 h-5 accent-violet-500">
+                    <div>
+                        <span class="font-medium">Minúsculas</span>
+                        <span class="text-xs text-zinc-500 block">a-z</span>
+                    </div>
+                </label>
+                
+                <label class="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl cursor-pointer transition-colors">
+                    <input type="checkbox" id="numbers" checked class="w-5 h-5 accent-violet-500">
+                    <div>
+                        <span class="font-medium">Números</span>
+                        <span class="text-xs text-zinc-500 block">0-9</span>
+                    </div>
+                </label>
+                
+                <label class="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl cursor-pointer transition-colors">
+                    <input type="checkbox" id="symbols" checked class="w-5 h-5 accent-violet-500">
+                    <div>
+                        <span class="font-medium">Símbolos</span>
+                        <span class="text-xs text-zinc-500 block">!@#$%</span>
+                    </div>
+                </label>
+            </div>
+
+            <button onclick="generatePassword()" 
+                    class="mt-8 w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 py-5 rounded-2xl font-semibold text-lg hover:scale-[1.02] transition-all active:scale-95 shadow-xl shadow-violet-500/40">
+                GERAR SENHA SEGURA
+            </button>
+        </div>
+
+        <!-- Tips -->
+        <div class="mt-8 text-xs text-zinc-500 flex items-start gap-2">
+            <i class="fa-solid fa-info-circle mt-0.5"></i>
+            <p>
+                Dica: Use senhas com pelo menos 16 caracteres, incluindo maiúsculas, minúsculas, números e símbolos.
+                Nunca reutilize senhas em diferentes serviços.
+            </p>
+        </div>
     </div>
 
-    <div id="status">Digite uma senha</div>
+    <script>
+        // Character sets
+        const lowercase = "abcdefghijklmnopqrstuvwxyz";
+        const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const numbers = "0123456789";
+        const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
 
-    <div class="labels">
-        <span>💀 Horrível</span>
-        <span>😕 Ruim</span>
-        <span>🙂 Bom</span>
-        <span>😎 Legal</span>
-        <span>🚀 Muito Bom</span>
-        <span>🗿 Sigma</span>
-    </div>
-</div>
+        function getRandomChar(str) {
+            return str[Math.floor(Math.random() * str.length)];
+        }
 
-<script src="script.js"></script>
+        function generatePassword() {
+            const length = parseInt(document.getElementById('length').value);
+            const hasUpper = document.getElementById('uppercase').checked;
+            const hasLower = document.getElementById('lowercase').checked;
+            const hasNumbers = document.getElementById('numbers').checked;
+            const hasSymbols = document.getElementById('symbols').checked;
+
+            let chars = "";
+            if (hasLower) chars += lowercase;
+            if (hasUpper) chars += uppercase;
+            if (hasNumbers) chars += numbers;
+            if (hasSymbols) chars += symbols;
+
+            // Garantir que pelo menos um tipo esteja selecionado
+            if (chars === "") {
+                chars = lowercase;
+                document.getElementById('lowercase').checked = true;
+            }
+
+            let password = "";
+
+            // Garantir que cada tipo selecionado apareça pelo menos uma vez
+            if (hasUpper) password += getRandomChar(uppercase);
+            if (hasLower) password += getRandomChar(lowercase);
+            if (hasNumbers) password += getRandomChar(numbers);
+            if (hasSymbols) password += getRandomChar(symbols);
+
+            // Preencher o resto
+            for (let i = password.length; i < length; i++) {
+                password += getRandomChar(chars);
+            }
+
+            // Embaralhar a senha
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+            document.getElementById('password').textContent = password;
+            evaluateStrength(password);
+        }
+
+        function evaluateStrength(password) {
+            let score = 0;
+            const length = password.length;
+            
+            // Comprimento
+            if (length >= 8) score += 1;
+            if (length >= 12) score += 2;
+            if (length >= 16) score += 2;
+            if (length >= 20) score += 1;
+            
+            // Variedade
+            if (/[A-Z]/.test(password)) score += 2;
+            if (/[a-z]/.test(password)) score += 2;
+            if (/\d/.test(password)) score += 2;
+            if (/[^A-Za-z0-9]/.test(password)) score += 3;
+
+            // Penalidades
+            if (password.length < 8) score = Math.max(0, score - 3);
+
+            const bar = document.getElementById('strength-bar');
+            const text = document.getElementById('strength-text');
+
+            let width, color, label;
+
+            if (score <= 4) {
+                width = "25%";
+                color = "bg-red-500";
+                label = "HORRÍVEL";
+            } else if (score <= 7) {
+                width = "45%";
+                color = "bg-orange-500";
+                label = "RUIM";
+            } else if (score <= 10) {
+                width = "65%";
+                color = "bg-yellow-400";
+                label = "BOM";
+            } else if (score <= 12) {
+                width = "80%";
+                color = "bg-emerald-400";
+                label = "LEGAL";
+            } else if (score <= 14) {
+                width = "92%";
+                color = "bg-emerald-500";
+                label = "MUITO BOM";
+            } else {
+                width = "100%";
+                color = "bg-violet-500";
+                label = "SIGMA";
+            }
+
+            bar.style.width = width;
+            bar.className = `strength-bar h-full ${color} rounded-3xl`;
+            text.textContent = label;
+            text.className = `font-semibold ${score > 12 ? 'text-violet-400' : score > 9 ? 'text-emerald-400' : 'text-yellow-400'}`;
+        }
+
+        function updateLength(value) {
+            document.getElementById('length-value').textContent = value;
+        }
+
+        function copyPassword() {
+            const passwordText = document.getElementById('password').textContent;
+            
+            if (passwordText === "Clique em gerar") {
+                alert("Gere uma senha primeiro!");
+                return;
+            }
+
+            navigator.clipboard.writeText(passwordText).then(() => {
+                const originalText = document.getElementById('password').textContent;
+                const btns = document.querySelectorAll('button');
+                
+                // Feedback visual
+                const copyBtn = document.querySelector('button[onclick="copyPassword()"]');
+                const originalContent = copyBtn.innerHTML;
+                
+                copyBtn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Copiado!</span>`;
+                copyBtn.style.backgroundColor = "#10b981";
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalContent;
+                    copyBtn.style.backgroundColor = "";
+                }, 2000);
+            });
+        }
+
+        // Inicialização
+        window.onload = function() {
+            // Gera uma senha inicial
+            setTimeout(() => {
+                generatePassword();
+            }, 300);
+        };
+
+        // Atalho de teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "r" && e.ctrlKey) {
+                e.preventDefault();
+                generatePassword();
+            }
+        });
+    </script>
 </body>
 </html>
